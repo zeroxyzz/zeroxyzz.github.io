@@ -3,6 +3,8 @@ title: 金额计算为什么不能用float或者double
 tags: Java 
 ---
 
+
+
 最近在做一个电商相关的项目，自然是要和钱打交道的，很多小伙伴都知道涉及到金额不应该用float或者double存储，因为浮点数结果不精确。话说回来，为什么float或者double不精确呢？
 
 ### 为什么不能用float存储金额
@@ -99,7 +101,7 @@ public static void test() {
 
 
 
-
+#### 
 
 参考资料：
 
