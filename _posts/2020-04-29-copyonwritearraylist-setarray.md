@@ -24,6 +24,8 @@ public E set(int index, E element) {
 }
 ```
 
+<!--more-->
+
 网上对这个问题的讨论不少，不管是国外还是国内(其实也是抄国外的~)，其中大多观点都集中在happens-before relationship。起因是JLS(Java Language Specification)中有这样一条定义。我复制一段[JLS的定义](https://docs.oracle.com/javase/specs/jls/se8/html/jls-17.html#jls-17.4.5)。
 
 > The *happens-before* relation defines when data races take place.

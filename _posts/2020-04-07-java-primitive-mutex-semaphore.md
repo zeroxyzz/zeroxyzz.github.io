@@ -18,7 +18,7 @@ tags: Java
 
 上面的分类出自哥伦比亚大学网站的一篇文章，点击进入[Synchronization primitives](http://www.cs.columbia.edu/~hgs/os/sync.html)。精力有限，本文仅介绍Mutex和Semaphores。
 
-
+<!--more-->
 
 ### Mutex & Lock
 

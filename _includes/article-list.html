@@ -59,11 +59,12 @@
           <div class="item__description">
             {%- if _article.excerpt and include.show_excerpt -%}
               <div class="article__content" itemprop="description articleBody">
-                {%- if _excerpt_type == 'html' -%}
+                {{ _article.excerpt }}
+                <!-- {%- if _excerpt_type == 'html' -%}
                   {{ _article.excerpt }}
                 {%- else -%}
                   {{ _article.excerpt | strip_html | strip | truncate: _excerpt_truncate }}
-                {%- endif -%}
+                {%- endif -%} -->
               </div>
             {%- endif -%}
             {%- if include.show_readmore -%}
