@@ -30,7 +30,7 @@ public void test() {
 
 现代计算机的浮点数一般采用IEEE 754标准，由以下三部分组成： sign bit(符号位)、 exponent field(指数部分)、 significand or mantissa(有效数或尾数部分)，其中sign占1位，exponent占8位，fraction占23位
 
-<img src="https://moonto.org/assets/images/java/float_example.png" alt="float_example" style="zoom:50%;" />
+<img src="https://user-images.githubusercontent.com/66450332/90842916-0615a180-e393-11ea-84d6-031441ad023c.png" alt="/assets/images/java/float_example.png" style="zoom:50%;" />
 
 
 
@@ -52,7 +52,9 @@ public void test() {
 
 2.6为整数，所以符号位为0，指数部分为10000000，有效部分为规格化后的小数部分(因为规格化后最高位一定为1，所以这里只记录尾数的小数部分)，取小数部分的前23位：01001100110011001100110，三部分拼接到一起为01000000001001100110011001100110，到这里就可以看出为什么float会不精确了，因为小数部分转换为二进制后是无限循环的，但是这里只能存储23位有效数字，存储时存在精度丢失
 
-<img src="https://moonto.org/assets/images/java/float-2.6.png" alt="float_2.6f" style="zoom:50%;" />
+<img src="https://user-images.githubusercontent.com/66450332/90843006-33624f80-e393-11ea-92bb-765e924b3c33.png" alt="/assets/images/java/float-2.6.png" style="zoom:50%;" />
+
+
 
 ##### 求和
 

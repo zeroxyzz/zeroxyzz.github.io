@@ -1,0 +1,21 @@
+I"	<p>如果有读过CopyOnWriteArrayList的源代码，可能你会发现它的set方法有点怪异，在方法的最后，即使在oldValue == element的情况下，还是调用了一次setArray(es)。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">private</span> <span class="kd">transient</span> <span class="kd">volatile</span> <span class="nc">Object</span><span class="o">[]</span> <span class="n">array</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="no">E</span> <span class="nf">set</span><span class="o">(</span><span class="kt">int</span> <span class="n">index</span><span class="o">,</span> <span class="no">E</span> <span class="n">element</span><span class="o">)</span> <span class="o">{</span>
+  <span class="kd">synchronized</span> <span class="o">(</span><span class="n">lock</span><span class="o">)</span> <span class="o">{</span>
+    <span class="nc">Object</span><span class="o">[]</span> <span class="n">es</span> <span class="o">=</span> <span class="n">getArray</span><span class="o">();</span>
+    <span class="no">E</span> <span class="n">oldValue</span> <span class="o">=</span> <span class="n">elementAt</span><span class="o">(</span><span class="n">es</span><span class="o">,</span> <span class="n">index</span><span class="o">);</span>
+
+    <span class="k">if</span> <span class="o">(</span><span class="n">oldValue</span> <span class="o">!=</span> <span class="n">element</span><span class="o">)</span> <span class="o">{</span>
+      <span class="n">es</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="na">clone</span><span class="o">();</span>
+      <span class="n">es</span><span class="o">[</span><span class="n">index</span><span class="o">]</span> <span class="o">=</span> <span class="n">element</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="c1">// Ensure volatile write semantics even when oldvalue == element</span>
+    <span class="n">setArray</span><span class="o">(</span><span class="n">es</span><span class="o">);</span>
+    <span class="k">return</span> <span class="n">oldValue</span><span class="o">;</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+:ET

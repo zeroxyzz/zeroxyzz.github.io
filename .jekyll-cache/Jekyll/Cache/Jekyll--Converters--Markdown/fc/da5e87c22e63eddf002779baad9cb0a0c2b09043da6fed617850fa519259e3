@@ -1,0 +1,22 @@
+I"<p>在进行web开发的时候，我们常常需要注入当前请求的上下文，来获取一些特殊的Http请求信息，在SpringMVC或SpringBoot中，我们通常会直接注入HttpServletRequest类。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@RestController</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">WebController</span> <span class="o">{</span>
+    
+    <span class="kd">private</span> <span class="kd">final</span> <span class="nc">HttpServletRequest</span> <span class="n">request</span><span class="o">;</span>
+
+    <span class="nd">@Autowired</span>
+    <span class="kd">public</span> <span class="nf">WebController</span><span class="o">(</span><span class="nc">HttpServletRequest</span> <span class="n">request</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">request</span> <span class="o">=</span> <span class="n">request</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@GetMapping</span><span class="o">(</span><span class="s">"/hello"</span><span class="o">)</span>
+    <span class="kd">public</span> <span class="nc">String</span> <span class="nf">hello</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="na">getSession</span><span class="o">().</span><span class="na">getId</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>我们使用curl访问这个地址时会发现每次的sessionId都不同，可是我们注入是同一个HttpServletRequest啊，这是怎么回事呢？</p>
+
+:ET

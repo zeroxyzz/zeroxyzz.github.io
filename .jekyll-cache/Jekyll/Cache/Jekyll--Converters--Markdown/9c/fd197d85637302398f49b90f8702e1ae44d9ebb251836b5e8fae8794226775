@@ -1,0 +1,188 @@
+I"�><p>String在Java中的使用是很广泛的，看似平平无奇，但是了解起来却发现原来超级有内涵的，以下是本兔的一些总结，从源码到字节码看看String的神奇之处。</p>
+
+<!--more-->
+
+<h3 id="1-string的本质">1. String的本质</h3>
+
+<h4 id="string源码">String源码：</h4>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">String</span>
+    <span class="kd">implements</span> <span class="n">java</span><span class="o">.</span><span class="na">io</span><span class="o">.</span><span class="na">Serializable</span><span class="o">,</span> <span class="nc">Comparable</span><span class="o">&lt;</span><span class="nc">String</span><span class="o">&gt;,</span> <span class="nc">CharSequence</span> <span class="o">{</span>
+  
+    <span class="nd">@Stable</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="kt">byte</span><span class="o">[]</span> <span class="n">value</span><span class="o">;</span>
+   	<span class="kd">private</span> <span class="kd">final</span> <span class="kt">byte</span> <span class="n">coder</span><span class="o">;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>String声明为final，不可被继承</li>
+  <li>实现了<code class="language-plaintext highlighter-rouge">Serializable</code>，可序列化，实现了<code class="language-plaintext highlighter-rouge">Comparable</code>接口，String可以比较大小</li>
+  <li>String在jdk9之前内部定义了<code class="language-plaintext highlighter-rouge">final char  value[]</code>用于存储字符串数据，jdk9及之后改为了<code class="language-plaintext highlighter-rouge">final byte[] value</code> 加上编码标记<code class="language-plaintext highlighter-rouge">coder</code>，节约空间（关于jdk9存储结果变更的说明，在官方文档里Motivation已经有详细的说明，详情可见http://openjdk.java.net/jeps/254）</li>
+</ul>
+
+<h4 id="string-pool">String Pool</h4>
+
+<p>String Pool 即字符串常量池，在String Pool中存储的字符串是相异的，java语言规范要求，完全相同的字符串字面量，应该s是同样的Unicode，必须是指向同一个String实例的，关于String Pool简单的说明下：</p>
+
+<ul>
+  <li>String Pool是一个固定大小的Hashtable，在jdk7之前默认大小为1009，jdk7及之后默认大小为60013</li>
+  <li>如果放进String Pool的String特别多，就很容易造成hash冲突，从而导致链表很长，此时String.intern()的性能会大大下降</li>
+  <li>可以使用-XX:StringTableSize设置String Pool的大小，不过从jdk8开始，StringTableSize最小只能为1009了，小于这个就会报错，比如设置为200则会报<code class="language-plaintext highlighter-rouge">uintx StringTableSize=200 is outside the allowed range [ 1009 ... 6661443 ]</code></li>
+</ul>
+
+<h3 id="2-string的内存分配">2. String的内存分配</h3>
+
+<p>在java中有8种基本数据类型和一种比较特殊的类型String，为了使他们在运行中速度更快更节省内存，都提供了常量池的概念，常量池就相当于java系统级提供的缓存，8中基本数据类型的常量池都是系统协调的，但是String的比较特殊，他有两种方式：</p>
+
+<ul>
+  <li>使用”“声明出来的String对象会直接存储在常量池中，eg: String s = “hello world”</li>
+  <li>不是”“声明的字符串可以使用String.intern()将其放入常量池中</li>
+</ul>
+
+<p>对于常量池，这里简单说明下，在jdk6及之前，是放在永久代的，但是PermSize比较小，虽然可以调整，但是永久代垃圾回收频率比较低，在jdk7开始去永久代，将常量池调整到了堆中，对String.intern()也做了修改，文章后续会说明两个版本不同之处。</p>
+
+<h3 id="3-string的基本操作">3. String的基本操作</h3>
+
+<h4 id="string的拼接">String的拼接</h4>
+
+<p><strong>Example1</strong>：</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">String</span> <span class="n">s1</span> <span class="o">=</span> <span class="s">"a"</span> <span class="o">+</span> <span class="s">"b"</span> <span class="o">+</span> <span class="s">"c"</span><span class="o">;</span>
+<span class="nc">String</span> <span class="n">s2</span> <span class="o">=</span> <span class="s">"abc"</span><span class="o">;</span>
+<span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">s1</span> <span class="o">==</span> <span class="n">s2</span><span class="o">);</span>  <span class="c1">//true</span>
+<span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">s1</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">s2</span><span class="o">));</span>  <span class="c1">//true</span>
+</code></pre></div></div>
+
+<p>用javap反编译可以查看以上片段对应的字节码：</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0: ldc           <span class="c">#3                  // String abc</span>
+2: astore_0
+3: ldc           <span class="c">#3                  // String abc</span>
+5: astore_1
+...
+</code></pre></div></div>
+
+<p>从字节码可以看出”a”+”b”+”c”是等价于”abc”的</p>
+
+<blockquote>
+  <p>常量与常量的拼接结果是在常量池中的，这个是编译器优化</p>
+
+</blockquote>
+
+<p><strong>Example2</strong>：</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">String</span> <span class="n">s1</span> <span class="o">=</span> <span class="s">"a"</span><span class="o">;</span>
+<span class="nc">String</span> <span class="n">s2</span> <span class="o">=</span> <span class="s">"b"</span><span class="o">;</span>
+<span class="nc">String</span> <span class="n">s3</span> <span class="o">=</span> <span class="s">"ab"</span><span class="o">;</span>
+<span class="nc">String</span> <span class="n">s4</span> <span class="o">=</span> <span class="s">"ab"</span><span class="o">;</span>
+<span class="nc">String</span> <span class="n">s5</span> <span class="o">=</span> <span class="n">s1</span> <span class="o">+</span> <span class="s">"b"</span><span class="o">;</span>
+<span class="nc">String</span> <span class="n">s6</span> <span class="o">=</span> <span class="s">"a"</span> <span class="o">+</span> <span class="n">s2</span><span class="o">;</span>
+<span class="nc">String</span> <span class="n">s7</span> <span class="o">=</span> <span class="n">s1</span> <span class="o">+</span> <span class="n">s2</span><span class="o">;</span>
+<span class="nc">String</span> <span class="n">s8</span> <span class="o">=</span> <span class="n">s7</span><span class="o">.</span><span class="na">intern</span><span class="o">();</span>
+<span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">s3</span> <span class="o">==</span> <span class="n">s4</span><span class="o">);</span> <span class="c1">//true</span>
+<span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">s3</span> <span class="o">==</span> <span class="n">s5</span><span class="o">);</span> <span class="c1">//false</span>
+<span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">s3</span> <span class="o">==</span> <span class="n">s6</span><span class="o">);</span> <span class="c1">//false</span>
+<span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">s3</span> <span class="o">==</span> <span class="n">s7</span><span class="o">);</span> <span class="c1">//false</span>
+<span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">s5</span> <span class="o">==</span> <span class="n">s6</span><span class="o">);</span> <span class="c1">//false</span>
+<span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">s5</span> <span class="o">==</span> <span class="n">s7</span><span class="o">);</span> <span class="c1">//false</span>
+<span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">s6</span> <span class="o">==</span> <span class="n">s7</span><span class="o">);</span> <span class="c1">//false</span>
+<span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">s3</span> <span class="o">==</span> <span class="n">s8</span><span class="o">);</span> <span class="c1">//false</span>
+</code></pre></div></div>
+
+<blockquote>
+  <p>两个字符串常量或者字面量相加，都不会new新的字符串，两个中只要其中一个是变量，都会new新的字符串，新的字符串都是在堆中的，可以看下字节码文件，jdk8中变量拼接的原理是StringBuilder，jdk9使用了StringConcatFactory.makeConcatWithConstants</p>
+
+</blockquote>
+
+<h4 id="intern的使用">intern()的使用</h4>
+
+<p>intern()是native调用，它的作用是在字符串常量池中通过equals方法判断是否已经存在要放入的字符串，如果没有则在常量池中开辟一块空间存放这个字符串对象并返回该对象的引用，如果有则直接返回String对象的引用，在不同jdk版本中存入常量池的方式有所不同：</p>
+
+<p>jdk6中，将这个字符串对象尝试放入池中</p>
+
+<ul>
+  <li>如果常量池中已经有了，则不会放入，直接返回常量池中已有的对象的地址</li>
+  <li>如果没有，会把对象复制一份放入常量池中，返回常量池中的对象地址</li>
+</ul>
+
+<p>jdk7中，将这个字符串对象尝试放入池中</p>
+
+<ul>
+  <li>如果常量池中已经有了，则不会放入，直接返回常量池中已有的对象的地址</li>
+  <li>如果没有，会把对象的引用地址复制一份，保存到常量池中，并返回池中的引用地址</li>
+</ul>
+
+<p>关于intern()操作的修改，官方记录请戳https://www.oracle.com/java/technologies/javase/jdk7-relnotes.html#jdk7changes</p>
+
+<p>以下以两段代码演示jdk6及后续版本的区别</p>
+
+<p><strong>代码一</strong>：</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">String</span> <span class="n">s</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">String</span><span class="o">(</span><span class="s">"hello"</span><span class="o">);</span>
+<span class="n">s</span><span class="o">.</span><span class="na">intern</span><span class="o">();</span>
+<span class="nc">String</span> <span class="n">s2</span> <span class="o">=</span> <span class="s">"hello"</span><span class="o">;</span>
+<span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">s</span> <span class="o">==</span> <span class="n">s1</span><span class="o">);</span> <span class="c1">//false</span>
+</code></pre></div></div>
+
+<p>对应字节码为(jdk10)：</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> 0 new <span class="c">#2 &lt;java/lang/String&gt;</span>
+ 3 dup
+ 4 ldc <span class="c">#3 &lt;hello&gt;</span>
+ 6 invokespecial <span class="c">#4 &lt;java/lang/String.&lt;init&gt;&gt;</span>
+ 9 astore_1
+10 aload_1
+11 invokevirtual <span class="c">#5 &lt;java/lang/String.intern&gt;</span>
+14 pop
+15 ldc <span class="c">#3 &lt;hello&gt;</span>
+17 astore_2
+...
+</code></pre></div></div>
+
+<p>从字节码可以看出，new String(“hello”)会在常量池中创建字符串”hello”（ldc指令），这时s.intern()的操作是没有影响的，因为常量池中已经有了”hello”，所以s2对应的就是常量池中”hello”的引用，而s是new出来的对应的是heap中的引用，自然于s2不等，对于jdk6及后续版本结果是一致的</p>
+
+<p><strong>代码二</strong>：</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">String</span> <span class="n">s1</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">String</span><span class="o">(</span><span class="s">"a"</span><span class="o">)</span> <span class="o">+</span> <span class="k">new</span> <span class="nc">String</span><span class="o">(</span><span class="s">"b"</span><span class="o">);</span>
+<span class="n">s1</span><span class="o">.</span><span class="na">intern</span><span class="o">();</span>
+<span class="nc">String</span> <span class="n">s2</span> <span class="o">=</span> <span class="s">"ab"</span><span class="o">;</span>
+<span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">s1</span> <span class="o">==</span> <span class="n">s2</span><span class="o">);</span>
+</code></pre></div></div>
+
+<p>对应字节码为(jdk10演示)：</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> 0 new <span class="c">#2 &lt;java/lang/String&gt;</span>
+ 3 dup
+ 4 ldc <span class="c">#3 &lt;a&gt;</span>
+ 6 invokespecial <span class="c">#4 &lt;java/lang/String.&lt;init&gt;&gt;</span>
+ 9 new <span class="c">#2 &lt;java/lang/String&gt;</span>
+12 dup
+13 ldc <span class="c">#5 &lt;b&gt;</span>
+15 invokespecial <span class="c">#4 &lt;java/lang/String.&lt;init&gt;&gt;</span>
+18 invokedynamic <span class="c">#6 &lt;makeConcatWithConstants, BootstrapMethods #0&gt;</span>
+23 astore_1
+24 aload_1
+25 invokevirtual <span class="c">#7 &lt;java/lang/String.intern&gt;</span>
+28 pop
+29 ldc <span class="c">#8 &lt;ab&gt;</span>
+31 astore_2
+....
+</code></pre></div></div>
+
+<p>从字节码可以看出，第一行结束后并没有在字符串中创建字符串”ab”，s3指向的地址是new String(“ab”)，所以当调用s3.intern()时会在字符串常量池中创建”ab”，但是重新创建”ab”的行为在不同版本表现是不一致的，所以这里s3==s4结果也不同，jdk6下结果为false(在常量池重新复制了一份，有新的地址)，后续版本则为true(在常量池保存的是之前在堆中生成的字符串的地址引用)， 对jdk6和jdk7上续代码调用intern()在常量池中添加字符串对象示意图如下：</p>
+
+<p>jdk6:</p>
+
+<p><img align="center" src="https://user-images.githubusercontent.com/66450332/90843011-35c4a980-e393-11ea-9a74-aaf4cbdd1e9b.png" width="500" height="250" alt="/assets/images/java/string-memory-jdk6.png" /></p>
+
+<p>jdk7：</p>
+
+<p><img align="center" src="https://user-images.githubusercontent.com/66450332/90843013-365d4000-e393-11ea-81d3-98b5239e467f.png" width="500" height="250" alt="/assets/images/java/string-memory-jdk7.png" /></p>
+
+<p>参考资料：</p>
+
+<p><a href="">深入理解java虚拟机</a></p>
+
+<p><a href="https://www.journaldev.com/797/what-is-java-string-pool">https://www.journaldev.com/797/what-is-java-string-pool</a></p>
+
+:ET

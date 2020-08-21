@@ -2,16 +2,16 @@
 layout: articles
 titles:
   # @start locale config
-  en      : &EN       Home
+  en      : &EN       Moonto的博客 - Mooto's blog
   en-GB   : *EN
   en-US   : *EN
   en-CA   : *EN
   en-AU   : *EN
-  zh-Hans : &ZH_HANS  主页
+  zh-Hans : &ZH_HANS  Moonto的博客 - Mooto's blog
   zh      : *ZH_HANS
   zh-CN   : *ZH_HANS
   zh-SG   : *ZH_HANS
-  zh-Hant : &ZH_HANT  主頁
+  zh-Hant : &ZH_HANT  Moonto的博客 - Mooto's blog
   zh-TW   : *ZH_HANT
   zh-HK   : *ZH_HANT
   ko      : &KO       홈
@@ -37,6 +37,7 @@ articles:
 </div>
 <script>
   {%- include scripts/home.js -%}
+  {%- include scripts/image-error.js -%}
 </script>
 
 {{ content }}
