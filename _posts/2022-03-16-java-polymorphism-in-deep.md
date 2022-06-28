@@ -57,7 +57,7 @@ tags: polymorphism
   
   Subtyping类似于集合中的"包含关系(⊆)"。在上面的例子中，可以理解为String是Charsequence的子集。因为它继承自Charsequence，因此使用Charsequence来表达String满足类型安全。
 
-
+<!--more-->
 
 ## 2.方法分派(Method Dispatch)
 
